@@ -13,7 +13,12 @@
     header{display:flex;align-items:center;justify-content:space-between;gap:16px}
     h1{margin:0;font-size:20px;letter-spacing:-0.2px}
     .meta{color:var(--muted);font-size:13px}
-    .controls{display:flex;gap:10px;align-items:center}
+    .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .nearest-results{margin-top:18px;padding:14px;border-radius:10px;background:rgba(14,165,164,0.1);border:1px solid rgba(14,165,164,0.3)}
+    .nearest-results h3{margin:0 0 12px 0;color:var(--accent);font-size:15px}
+    .nearest-station{margin:8px 0;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px;border-left:3px solid var(--accent)}
+    .nearest-station strong{color:#dbeafe}
+    .nearest-station .detail{color:var(--muted);font-size:13px;margin-top:4px}
     .table-wrap{margin-top:18px;overflow:auto;border-radius:8px}
     table{width:100%;border-collapse:collapse;min-width:720px}
     thead th{position:sticky;top:0;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(255,255,255,0.02));backdrop-filter:blur(4px);padding:12px 14px;text-align:left;font-size:13px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,0.03)}
@@ -26,7 +31,8 @@
     .footer2{margin-top:20px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:center}
     .btn{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#022;cursor:pointer;font-weight:600}
     .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
-    .nearest-box{margin-top:14px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+    .btn:disabled{opacity:0.6;cursor:not-allowed}
+    .error{color:#ff6b6b;font-size:13px;margin-top:4px}
   </style>
   <meta name="description" content="Official FEMA Primary Entry Point (PEP) station list, frequencies, and locations.">
 </head>
@@ -38,10 +44,13 @@
         <div class="meta">Official FEMA list — last updated <strong>September 25, 2025</strong></div>
       </div>
       <div class="controls">
-<button id="download" class="btn">Download CSV</button>
-<button id="copy" class="btn secondary">Copy Table</button>
+        <button id="useLocation" class="btn">Use My Location</button>
+        <button id="download" class="btn">Download CSV</button>
+        <button id="copy" class="btn secondary">Copy Table</button>
       </div>
     </header>
+
+    <div id="nearestContainer"></div>
 
     <div class="table-wrap">
       <table id="stations">
@@ -53,205 +62,254 @@
             <th>Frequency</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Station rows inserted by script -->
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
 
     <p class="note">Source: FEMA — Primary Entry Point (PEP) station roster. This page reflects the FEMA roster as of September 25, 2025.</p>
 
-<!-- First footer -->
-<div class="footer">
-  <div style="display:flex; gap:12px; flex-wrap:wrap;">
-    <div class="meta">Created for display and quick reference.</div>
-    <div style="color:var(--muted);font-size:13px">
-      This website is not affiliated with The US government including FEMA and the DHS
+    <div class="footer">
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <div class="meta">Created for display and quick reference.</div>
+        <div style="color:var(--muted);font-size:13px">This website is not affiliated with The US government including FEMA and the DHS</div>
+        <div style="color:var(--muted);font-size:13px">This website is printer friendly</div>
+      </div>
     </div>
-    <div style="color:var(--muted);font-size:13px">
-      This website is printer friendly
-    </div>
-  </div>
-</div>
 
-<!-- Second footer below -->
-<div class="footer2">
-  <div style="display:flex; gap:12px; flex-wrap:wrap;">
-    <a href="https://untitledmanifoldguy.github.io/pepstationlist/">Official FEMA PEP Stations List</a> © 2025 by 
-    <a href="https://www.youtube.com/@untitledmanifoldguy">Untitled Manifold Guy</a> is licensed under 
-    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+    <div class="footer2">
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="https://untitledmanifoldguy.github.io/pepstationlist/">Official FEMA PEP Stations List</a> © 2025 by 
+        <a href="https://www.youtube.com/@untitledmanifoldguy">Untitled Manifold Guy</a> is licensed under 
+        <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+      </div>
+    </div>
   </div>
-</div>
 
   <script>
-    // Full station list
     const pepStations = [
-  { call:"WWL", city:"New Orleans", state:"LA", freq:"870", band:"AM", lat:29.95, lon:-90.07 },
-  { call:"WWFE", city:"Miami", state:"FL", freq:"670", band:"AM", lat:25.77, lon:-80.19 },
-  { call:"WVUV", city:"Pago Pago", state:"AS", freq:"648", band:"AM", lat:-14.28, lon:-170.70 },
-  { call:"WTMJ", city:"Milwaukee", state:"WI", freq:"620", band:"AM", lat:43.04, lon:-87.91 },
-  { call:"WTIC", city:"Farmington", state:"CT", freq:"1080", band:"AM", lat:41.72, lon:-72.83 },
-  { call:"WTEL", city:"Philadelphia", state:"PA", freq:"610", band:"AM", lat:39.95, lon:-75.16 },
-  { call:"WTAR", city:"Norfolk", state:"VA", freq:"850", band:"AM", lat:36.85, lon:-76.29 },
-  { call:"WTAM", city:"Cleveland", state:"OH", freq:"1100", band:"AM", lat:41.50, lon:-81.69 },
-  { call:"WSTA", city:"St. Thomas", state:"VI", freq:"1340", band:"AM", lat:18.34, lon:-64.93 },
-  { call:"WSRV", city:"Atlanta", state:"GA", freq:"97.1", band:"FM", lat:33.75, lon:-84.39 },
-  { call:"WSM", city:"Nashville", state:"TN", freq:"650", band:"AM", lat:36.16, lon:-86.78 },
-  { call:"WSFL", city:"New Bern", state:"NC", freq:"106.5", band:"FM", lat:35.10, lon:-77.04 },
-  { call:"WRXL", city:"Richmond", state:"VA", freq:"102.1", band:"FM", lat:37.54, lon:-77.46 },
-  { call:"WROW", city:"Albany", state:"NY", freq:"590", band:"AM", lat:42.65, lon:-73.75 },
-  { call:"WREC", city:"Memphis", state:"TN", freq:"600", band:"AM", lat:35.14, lon:-90.05 },
-  { call:"WQDR", city:"Raleigh", state:"NC", freq:"94.7", band:"FM", lat:35.78, lon:-78.64 },
-  { call:"WPLY", city:"Roanoke", state:"VA", freq:"610", band:"AM", lat:37.27, lon:-79.94 },
-  { call:"WOKV-FM", city:"Jacksonville", state:"FL", freq:"104.5", band:"FM", lat:30.33, lon:-81.65 },
-  { call:"WOKV-AM", city:"Jacksonville", state:"FL", freq:"690", band:"AM", lat:30.33, lon:-81.65 },
-  { call:"WMSI", city:"Jackson", state:"MS", freq:"102.9", band:"FM", lat:32.30, lon:-90.18 },
-  { call:"WMAC", city:"Macon", state:"GA", freq:"940", band:"AM", lat:32.83, lon:-83.65 },
-  { call:"WLW", city:"Cincinnati", state:"OH", freq:"700", band:"AM", lat:39.10, lon:-84.51 },
-  { call:"WLS", city:"Chicago", state:"IL", freq:"890", band:"AM", lat:41.88, lon:-87.63 },
-  { call:"WKVG", city:"Greenville", state:"SC", freq:"94.5", band:"FM", lat:34.85, lon:-82.39 },
-  { call:"WKAQ", city:"San Juan", state:"PR", freq:"580", band:"AM", lat:18.47, lon:-66.11 },
-  { call:"WJXB", city:"Knoxville", state:"TN", freq:"97.5", band:"FM", lat:35.96, lon:-83.92 },
-  { call:"WJR", city:"Riverview", state:"MI", freq:"760", band:"AM", lat:42.17, lon:-83.19 },
-  { call:"WJOX", city:"Birmingham", state:"AL", freq:"690", band:"AM", lat:33.52, lon:-86.81 },
-  { call:"WJCW", city:"Johnson City", state:"TN", freq:"910", band:"AM", lat:36.32, lon:-82.37 },
-  { call:"WHO", city:"Des Moines", state:"IA", freq:"1040", band:"AM", lat:41.59, lon:-93.62 },
-  { call:"WHB", city:"Kansas City", state:"MO", freq:"810", band:"AM", lat:39.10, lon:-94.58 },
-  { call:"WHAM", city:"Rochester", state:"NY", freq:"1180", band:"AM", lat:43.16, lon:-77.61 },
-  { call:"WGAN", city:"Portland", state:"ME", freq:"560", band:"AM", lat:43.65, lon:-70.26 },
-  { call:"WFLF", city:"Maitland", state:"FL", freq:"540", band:"AM", lat:28.62, lon:-81.37 },
-  { call:"WFED", city:"Washington", state:"DC", freq:"1500", band:"AM", lat:38.90, lon:-77.04 },
-  { call:"WCOS", city:"Columbia", state:"SC", freq:"97.5", band:"FM", lat:34.00, lon:-81.03 },
-  { call:"WCHS", city:"Charleston", state:"WV", freq:"580", band:"AM", lat:38.35, lon:-81.63 },
-  { call:"WCCO", city:"Minneapolis", state:"MN", freq:"830", band:"AM", lat:44.98, lon:-93.27 },
-  { call:"WBZ", city:"Boston", state:"MA", freq:"1030", band:"AM", lat:42.36, lon:-71.06 },
-  { call:"WBT", city:"Charlotte", state:"NC", freq:"1110", band:"AM", lat:35.23, lon:-80.84 },
-  { call:"WBNW", city:"Endicott", state:"NY", freq:"105.7", band:"FM", lat:42.10, lon:-76.06 },
-  { call:"WBAP", city:"Arlington", state:"TX", freq:"820", band:"AM", lat:32.74, lon:-97.11 },
-  { call:"WBAL", city:"Baltimore", state:"MD", freq:"1090", band:"AM", lat:39.29, lon:-76.61 },
-  { call:"WABC", city:"New York", state:"NJ", freq:"770", band:"AM", lat:40.71, lon:-74.00 },
-  { call:"KXNT", city:"Las Vegas", state:"NV", freq:"840", band:"AM", lat:36.17, lon:-115.14 },
-  { call:"KWKH", city:"Shreveport", state:"LA", freq:"1130", band:"AM", lat:32.52, lon:-93.75 },
-  { call:"KTWO", city:"Casper", state:"WY", freq:"1030", band:"AM", lat:42.85, lon:-106.31 },
-  { call:"KTWG", city:"Piti", state:"GU", freq:"801", band:"AM", lat:13.46, lon:144.69 },
-  { call:"KTRH", city:"Houston", state:"TX", freq:"740", band:"AM", lat:29.76, lon:-95.36 },
-  { call:"KSL", city:"Salt Lake City", state:"UT", freq:"1160", band:"AM", lat:40.76, lon:-111.89 },
-  { call:"KRVN", city:"Lexington", state:"NE", freq:"880", band:"AM", lat:40.78, lon:-99.74 },
-  { call:"KROD", city:"El Paso", state:"TX", freq:"600", band:"AM", lat:31.77, lon:-106.48 },
-  { call:"KRMG", city:"Tulsa", state:"OK", freq:"740", band:"AM", lat:36.15, lon:-95.99 },
-  { call:"KPNW", city:"Eugene", state:"OR", freq:"1120", band:"AM", lat:44.02, lon:-123.09 },
-  { call:"KOPB", city:"Portland", state:"OR", freq:"91.5", band:"FM", lat:45.52, lon:-122.67 },
-  { call:"KOA", city:"Denver", state:"CO", freq:"850", band:"AM", lat:39.69, lon:-104.98 },
-  { call:"KMOX", city:"St. Louis", state:"MO", freq:"1120", band:"AM", lat:38.61, lon:-90.20 },
-  { call:"KMJ", city:"Fresno", state:"CA", freq:"580", band:"AM", lat:36.75, lon:-119.74 },
-  { call:"KLBJ", city:"Austin", state:"TX", freq:"590", band:"AM", lat:30.36, lon:-97.62 },
-  { call:"KKOH", city:"Reno", state:"NV", freq:"780", band:"AM", lat:39.65, lon:-119.78 },
-  { call:"KKOB", city:"Albuquerque", state:"NM", freq:"770", band:"AM", lat:35.12, lon:-106.64 },
-  { call:"KIRO", city:"Seattle", state:"WA", freq:"710", band:"AM", lat:47.53, lon:-122.36 },
-  { call:"KHTS", city:"San Diego", state:"CA", freq:"93.3", band:"FM", lat:32.82, lon:-117.11 },
-  { call:"KHKA", city:"Honolulu", state:"HI", freq:"1500", band:"AM", lat:21.33, lon:-157.87 },
-  { call:"KFYR", city:"Bismarck", state:"ND", freq:"550", band:"AM", lat:46.81, lon:-100.71 },
-  { call:"KFQD", city:"Anchorage", state:"AK", freq:"750", band:"AM", lat:61.20, lon:-149.85 },
-  { call:"KFI", city:"La Mirada", state:"CA", freq:"640", band:"AM", lat:33.88, lon:-118.03 },
-  { call:"KERR", city:"Polson", state:"MT", freq:"750", band:"AM", lat:47.78, lon:-114.16 },
-  { call:"KDRI", city:"Tucson", state:"AZ", freq:"830", band:"AM", lat:32.17, lon:-110.92 },
-  { call:"KDKA", city:"Pittsburgh", state:"PA", freq:"1020", band:"AM", lat:40.44, lon:-79.99 },
-  { call:"KCBS", city:"San Francisco", state:"CA", freq:"740", band:"AM", lat:37.77, lon:-122.39 },
-  { call:"KBOI", city:"Boise", state:"ID", freq:"670", band:"AM", lat:43.62, lon:-116.19 },
-  { call:"KAAY", city:"Little Rock", state:"AR", freq:"1090", band:"AM", lat:34.76, lon:-92.34 },
+  { "call": "WWL", "city": "New Orleans", "state": "LA", "freq": "870", "band": "AM", "lat": 29.95, "lon": -90.07 },
+  { "call": "WWFE", "city": "Miami", "state": "FL", "freq": "670", "band": "AM", "lat": 25.77, "lon": -80.19 },
+  { "call": "WVUV", "city": "Pago Pago", "state": "AS", "freq": "648", "band": "AM", "lat": -14.28, "lon": -170.70 },
+  { "call": "WTMJ", "city": "Milwaukee", "state": "WI", "freq": "620", "band": "AM", "lat": 43.04, "lon": -87.91 },
+  { "call": "WTIC", "city": "Farmington", "state": "CT", "freq": "1080", "band": "AM", "lat": 41.72, "lon": -72.83 },
+  { "call": "WTEL", "city": "Philadelphia", "state": "PA", "freq": "610", "band": "AM", "lat": 39.95, "lon": -75.16 },
+  { "call": "WTAR", "city": "Norfolk", "state": "VA", "freq": "850", "band": "AM", "lat": 36.85, "lon": -76.29 },
+  { "call": "WTAM", "city": "Cleveland", "state": "OH", "freq": "1100", "band": "AM", "lat": 41.50, "lon": -81.69 },
+  { "call": "WSTA", "city": "St. Thomas", "state": "VI", "freq": "1340", "band": "AM", "lat": 18.34, "lon": -64.93 },
+  { "call": "WSRV", "city": "Atlanta", "state": "GA", "freq": "97.1", "band": "FM", "lat": 33.75, "lon": -84.39 },
+  { "call": "WSM", "city": "Nashville", "state": "TN", "freq": "650", "band": "AM", "lat": 36.16, "lon": -86.78 },
+  { "call": "WSFL", "city": "New Bern", "state": "NC", "freq": "106.5", "band": "FM", "lat": 35.10, "lon": -77.04 },
+  { "call": "WRXL", "city": "Richmond", "state": "VA", "freq": "102.1", "band": "FM", "lat": 37.54, "lon": -77.46 },
+  { "call": "WROW", "city": "Albany", "state": "NY", "freq": "590", "band": "AM", "lat": 42.65, "lon": -73.75 },
+  { "call": "WREC", "city": "Memphis", "state": "TN", "freq": "600", "band": "AM", "lat": 35.14, "lon": -90.05 },
+  { "call": "WQDR", "city": "Raleigh", "state": "NC", "freq": "94.7", "band": "FM", "lat": 35.78, "lon": -78.64 },
+  { "call": "WPLY", "city": "Roanoke", "state": "VA", "freq": "610", "band": "AM", "lat": 37.27, "lon": -79.94 },
+  { "call": "WOKV-FM", "city": "Jacksonville", "state": "FL", "freq": "104.5", "band": "FM", "lat": 30.33, "lon": -81.65 },
+  { "call": "WOKV-AM", "city": "Jacksonville", "state": "FL", "freq": "690", "band": "AM", "lat": 30.33, "lon": -81.65 },
+  { "call": "WMSI", "city": "Jackson", "state": "MS", "freq": "102.9", "band": "FM", "lat": 32.30, "lon": -90.18 },
+  { "call": "WMAC", "city": "Macon", "state": "GA", "freq": "940", "band": "AM", "lat": 32.83, "lon": -83.65 },
+  { "call": "WLW", "city": "Cincinnati", "state": "OH", "freq": "700", "band": "AM", "lat": 39.10, "lon": -84.51 },
+  { "call": "WLS", "city": "Chicago", "state": "IL", "freq": "890", "band": "AM", "lat": 41.88, "lon": -87.63 },
+  { "call": "WKVG", "city": "Greenville", "state": "SC", "freq": "94.5", "band": "FM", "lat": 34.85, "lon": -82.39 },
+  { "call": "WKAQ", "city": "San Juan", "state": "PR", "freq": "580", "band": "AM", "lat": 18.47, "lon": -66.11 },
+  { "call": "WJXB", "city": "Knoxville", "state": "TN", "freq": "97.5", "band": "FM", "lat": 35.96, "lon": -83.92 },
+  { "call": "WJR", "city": "Riverview", "state": "MI", "freq": "760", "band": "AM", "lat": 42.17, "lon": -83.19 },
+  { "call": "WJOX", "city": "Birmingham", "state": "AL", "freq": "690", "band": "AM", "lat": 33.52, "lon": -86.81 },
+  { "call": "WJCW", "city": "Johnson City", "state": "TN", "freq": "910", "band": "AM", "lat": 36.32, "lon": -82.37 },
+  { "call": "WHO", "city": "Des Moines", "state": "IA", "freq": "1040", "band": "AM", "lat": 41.59, "lon": -93.62 },
+  { "call": "WHB", "city": "Kansas City", "state": "MO", "freq": "810", "band": "AM", "lat": 39.10, "lon": -94.58 },
+  { "call": "WHAM", "city": "Rochester", "state": "NY", "freq": "1180", "band": "AM", "lat": 43.16, "lon": -77.61 },
+  { "call": "WGAN", "city": "Portland", "state": "ME", "freq": "560", "band": "AM", "lat": 43.65, "lon": -70.26 },
+  { "call": "WFLF", "city": "Maitland", "state": "FL", "freq": "540", "band": "AM", "lat": 28.62, "lon": -81.37 },
+  { "call": "WFED", "city": "Washington", "state": "DC", "freq": "1500", "band": "AM", "lat": 38.90, "lon": -77.04 },
+  { "call": "WCOS", "city": "Columbia", "state": "SC", "freq": "97.5", "band": "FM", "lat": 34.00, "lon": -81.03 },
+  { "call": "WCHS", "city": "Charleston", "state": "WV", "freq": "580", "band": "AM", "lat": 38.35, "lon": -81.63 },
+  { "call": "WCCO", "city": "Minneapolis", "state": "MN", "freq": "830", "band": "AM", "lat": 44.98, "lon": -93.27 },
+  { "call": "WBZ", "city": "Boston", "state": "MA", "freq": "1030", "band": "AM", "lat": 42.36, "lon": -71.06 },
+  { "call": "WBT", "city": "Charlotte", "state": "NC", "freq": "1110", "band": "AM", "lat": 35.23, "lon": -80.84 },
+  { "call": "WBNW", "city": "Endicott", "state": "NY", "freq": "105.7", "band": "FM", "lat": 42.10, "lon": -76.06 },
+  { "call": "WBAP", "city": "Arlington", "state": "TX", "freq": "820", "band": "AM", "lat": 32.74, "lon": -97.11 },
+  { "call": "WBAL", "city": "Baltimore", "state": "MD", "freq": "1090", "band": "AM", "lat": 39.29, "lon": -76.61 },
+  { "call": "WABC", "city": "New York", "state": "NJ", "freq": "770", "band": "AM", "lat": 40.71, "lon": -74.00 },
+  { "call": "KXNT", "city": "Las Vegas", "state": "NV", "freq": "840", "band": "AM", "lat": 36.17, "lon": -115.14 },
+  { "call": "KWKH", "city": "Shreveport", "state": "LA", "freq": "1130", "band": "AM", "lat": 32.52, "lon": -93.75 },
+  { "call": "KTWO", "city": "Casper", "state": "WY", "freq": "1030", "band": "AM", "lat": 42.85, "lon": -106.31 },
+  { "call": "KTWG", "city": "Piti", "state": "GU", "freq": "801", "band": "AM", "lat": 13.46, "lon": 144.69 },
+  { "call": "KTRH", "city": "Houston", "state": "TX", "freq": "740", "band": "AM", "lat": 29.76, "lon": -95.36 },
+  { "call": "KSL", "city": "Salt Lake City", "state": "UT", "freq": "1160", "band": "AM", "lat": 40.76, "lon": -111.89 },
+  { "call": "KRVN", "city": "Lexington", "state": "NE", "freq": "880", "band": "AM", "lat": 40.78, "lon": -99.74 },
+  { "call": "KROD", "city": "El Paso", "state": "TX", "freq": "600", "band": "AM", "lat": 31.77, "lon": -106.48 },
+  { "call": "KRMG", "city": "Tulsa", "state": "OK", "freq": "740", "band": "AM", "lat": 36.15, "lon": -95.99 },
+  { "call": "KPNW", "city": "Eugene", "state": "OR", "freq": "1120", "band": "AM", "lat": 44.02, "lon": -123.09 },
+  { "call": "KOPB", "city": "Portland", "state": "OR", "freq": "91.5", "band": "FM", "lat": 45.52, "lon": -122.67 },
+  { "call": "KOA", "city": "Denver", "state": "CO", "freq": "850", "band": "AM", "lat": 39.69, "lon": -104.98 },
+  { "call": "KMOX", "city": "St. Louis", "state": "MO", "freq": "1120", "band": "AM", "lat": 38.61, "lon": -90.20 },
+  { "call": "KMJ", "city": "Fresno", "state": "CA", "freq": "580", "band": "AM", "lat": 36.75, "lon": -119.74 },
+  { "call": "KLBJ", "city": "Austin", "state": "TX", "freq": "590", "band": "AM", "lat": 30.36, "lon": -97.62 },
+  { "call": "KKOH", "city": "Reno", "state": "NV", "freq": "780", "band": "AM", "lat": 39.65, "lon": -119.78 },
+  { "call": "KKOB", "city": "Albuquerque", "state": "NM", "freq": "770", "band": "AM", "lat": 35.12, "lon": -106.64 },
+  { "call": "KIRO", "city": "Seattle", "state": "WA", "freq": "710", "band": "AM", "lat": 47.53, "lon": -122.36 },
+  { "call": "KHTS", "city": "San Diego", "state": "CA", "freq": "93.3", "band": "FM", "lat": 32.82, "lon": -117.11 },
+  { "call": "KHKA", "city": "Honolulu", "state": "HI", "freq": "1500", "band": "AM", "lat": 21.33, "lon": -157.87 },
+  { "call": "KFYR", "city": "Bismarck", "state": "ND", "freq": "550", "band": "AM", "lat": 46.81, "lon": -100.71 },
+  { "call": "KFQD", "city": "Anchorage", "state": "AK", "freq": "750", "band": "AM", "lat": 61.20, "lon": -149.85 },
+  { "call": "KFI", "city": "La Mirada", "state": "CA", "freq": "640", "band": "AM", "lat": 33.88, "lon": -118.03 },
+  { "call": "KERR", "city": "Polson", "state": "MT", "freq": "750", "band": "AM", "lat": 47.78, "lon": -114.16 },
+  { "call": "KDRI", "city": "Tucson", "state": "AZ", "freq": "830", "band": "AM", "lat": 32.17, "lon": -110.92 },
+  { "call": "KDKA", "city": "Pittsburgh", "state": "PA", "freq": "1020", "band": "AM", "lat": 40.44, "lon": -79.99 },
+  { "call": "KCBS", "city": "San Francisco", "state": "CA", "freq": "740", "band": "AM", "lat": 37.77, "lon": -122.39 },
+  { "call": "KBOI", "city": "Boise", "state": "ID", "freq": "670", "band": "AM", "lat": 43.62, "lon": -116.19 },
+  { "call": "KAAY", "city": "Little Rock", "state": "AR", "freq": "1090", "band": "AM", "lat": 34.76, "lon": -92.34 }
     ];
 
-document.addEventListener("DOMContentLoaded", () => {
-// ==========================
-// Render table
-// ==========================
-const tbody = document.querySelector('#stations tbody');
-
-function formatFrequency(st) {
-  return st.band === 'AM' ? `${Number(st.freq)} kHz` : `${Number(st.freq)} MHz`;
-}
-
-function render(rows) {
-  tbody.innerHTML = '';
-  for (const r of rows) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${r.call}</strong></td>
-      <td><div class="city-state">${r.city}</div></td>
-      <td class="city-state">${r.state}</td>
-      <td class="freq">${formatFrequency(r)}</td>`;
-    tbody.appendChild(tr);
-  }
-}
-
-render(pepStations);
-
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 3958.8; // miles
-  const toRad = x => x * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-async function findNearestStation(query) {
-  const geo = await geocodeLocation(query);
-  if (!geo) return null;
-
-  let nearest = null;
-  let bestDist = Infinity;
-
-  for (const st of pepStations) {
-    const d = haversine(geo.lat, geo.lon, st.lat, st.lon);
-    if (d < bestDist) {
-      bestDist = d;
-      nearest = { ...st, distance: d.toFixed(1) };
+    function formatFrequency(st) {
+      return st.band === 'AM' ? `${Number(st.freq)} kHz` : `${Number(st.freq)} MHz`;
     }
-  }
-  return nearest;
-}
 
-  // Download CSV
-  document.getElementById('download').addEventListener('click', () => {
-    let csv = "Call Sign,City,State,Frequency\n";
-    pepStations.forEach(s => {
-      csv += `${s.call},${s.city},${s.state},${formatFrequency(s)}\n`;
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "pep_stations.csv";
-    a.click();
-    
-    URL.revokeObjectURL(url);
-  });
-
-  // Copy Table
-  document.getElementById('copy').addEventListener('click', async () => {
-    let text = "Call Sign | City | State | Frequency\n";
-    text += "---------------------------------------\n";
-
-    pepStations.forEach(s => {
-      text += `${s.call} | ${s.city} | ${s.state} | ${formatFrequency(s)}\n`;
-    });
-
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("PEP station list copied to clipboard!");
-    } catch (err) {
-      alert("Failed to copy.");
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 3958.8;
+      const toRad = x => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
-  });
-});
 
-</script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tbody = document.querySelector('#stations tbody');
+      const nearestContainer = document.getElementById('nearestContainer');
+      const useLocationBtn = document.getElementById('useLocation');
+
+      // Render all stations
+      pepStations.forEach(st => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${st.call}</strong></td>
+          <td><div class="city-state">${st.city}</div></td>
+          <td class="city-state">${st.state}</td>
+          <td class="freq">${formatFrequency(st)}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      // Use location button
+      useLocationBtn.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          nearestContainer.innerHTML = '<div class="error">Geolocation is not supported by your browser</div>';
+          return;
+        }
+
+        useLocationBtn.disabled = true;
+        useLocationBtn.textContent = 'Getting location...';
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const withDist = pepStations.map(st => ({
+              ...st,
+              distance: haversine(latitude, longitude, st.lat, st.lon)
+            }));
+
+            withDist.sort((a, b) => a.distance - b.distance);
+
+            const baseCall = (call) => call.replace(/-AM|-FM$/, '');
+            const result = [];
+
+            for (const station of withDist) {
+              if (result.length === 2) break;
+              result.push(station);
+            }
+
+            if (result.length === 2) {
+              const base1 = baseCall(result[0].call);
+              const base2 = baseCall(result[1].call);
+
+              if (base1 === base2) {
+                for (const station of withDist) {
+                  if (station === result[0] || station === result[1]) continue;
+                  if (baseCall(station.call) !== base1) {
+                    result.push(station);
+                    break;
+                  }
+                }
+              } else {
+                const base1Has = { AM: result[0].band === 'AM', FM: result[0].band === 'FM' };
+                const base2Has = { AM: result[1].band === 'AM', FM: result[1].band === 'FM' };
+
+                if ((!base1Has.AM || !base1Has.FM) && (!base2Has.AM || !base2Has.FM)) {
+                  for (const station of withDist) {
+                    if (station === result[0] || station === result[1]) continue;
+                    const stBase = baseCall(station.call);
+                    if (stBase === base1 && !base1Has[station.band]) {
+                      result.push(station);
+                      break;
+                    }
+                    if (stBase === base2 && !base2Has[station.band]) {
+                      result.push(station);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+
+            let html = '<div class="nearest-results"><h3>Nearest PEP Stations to Your Location</h3>';
+            result.slice(0, 3).forEach((st, idx) => {
+              html += `
+                <div class="nearest-station">
+                  <strong>#${idx + 1}: ${st.call} (${st.band})</strong>
+                  <div class="detail">${st.city}, ${st.state} | ${formatFrequency(st)} | ${st.distance.toFixed(1)} miles away</div>
+                </div>`;
+            });
+            html += '</div>';
+            nearestContainer.innerHTML = html;
+
+            useLocationBtn.disabled = false;
+            useLocationBtn.textContent = 'Use My Location';
+          },
+          (error) => {
+            let errorMsg = 'Could not get your location';
+            if (error.code === error.PERMISSION_DENIED) {
+              errorMsg = 'Location permission denied. Please enable location access.';
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+              errorMsg = 'Location information is unavailable.';
+            }
+            nearestContainer.innerHTML = `<div class="error">${errorMsg}</div>`;
+            useLocationBtn.disabled = false;
+            useLocationBtn.textContent = 'Use My Location';
+          }
+        );
+      });
+
+      // Download CSV
+      document.getElementById('download').addEventListener('click', () => {
+        let csv = "Call Sign,City,State,Frequency\n";
+        pepStations.forEach(s => {
+          csv += `${s.call},${s.city},${s.state},${formatFrequency(s)}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "pep_stations.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Copy Table
+      document.getElementById('copy').addEventListener('click', async () => {
+        let text = "Call Sign | City | State | Frequency\n";
+        text += "---------------------------------------\n";
+        pepStations.forEach(s => {
+          text += `${s.call} | ${s.city} | ${s.state} | ${formatFrequency(s)}\n`;
+        });
+        try {
+          await navigator.clipboard.writeText(text);
+          alert("PEP station list copied to clipboard!");
+        } catch (err) {
+          alert("Failed to copy.");
+        }
+      });
+    });
+  </script>
 </body>
 </html>
